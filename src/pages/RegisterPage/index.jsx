@@ -46,15 +46,46 @@ export default function RegisterPage() {
     const loading = useSelector((state) => state.auth.loading);
     const accessToken = useSelector((state) => state.auth.accessToken);
     const dispatch = useDispatch();
+  
     useEffect(() => {
-        if (accessToken) {
-          history.push(URL_CONSTANTS.LOGIN);
+      if (accessToken) {
+        history.push(URL_CONSTANTS.LOGIN);
+      }
+    }, [dispatch, accessToken]);
+  
+    const handleChange = useCallback((e) => {
+      const { name, value } = e.target;
+      setInputs((prevInputs) => ({ ...prevInputs, [name]: value }));
+    }, []);
+  
+    const handleSubmit = useCallback(
+      async (e) => {
+        e.preventDefault();
+        let data = {
+          ...inputs,
+          password: isPassword,
+          confirm_password: isPasswordConfirm,
+        };
+  
+        try {
+          const response = await dispatch(register(data));
+          if (response.status === true) {
+            setValidationErrors([]);
+            createNotification("success", "topRight", response.message);
+            navigate(URL_CONSTANTS.LOGIN);
+          } else {
+            if (response.response?.status === false) {
+              setValidationErrors([]);
+              createNotification("error", "topRight", response.response.message);
+            }
+            setValidationErrors(response.response.errors);
+          }
+        } catch (error) {
+          console.log(error);
         }
-      }, [dispatch, accessToken]);
-    
-
-    
-    
+      },
+      [dispatch, isPassword, isPasswordConfirm, inputs, navigate]
+    );
       return (
         <Layout>
           <div className="w-full  pt-0 pb-0">
