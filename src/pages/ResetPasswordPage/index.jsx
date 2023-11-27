@@ -7,7 +7,74 @@ import createNotification from "../../utils/notification";
 import Loading from "../../components/Loading";
 
 export default function ResetPasswordPage() {
+    const location = useLocation();
+    const [isForgotPasswordToken, setIsForgotPasswordToken] = useState(null);
   
+    useEffect(() => {
+      const searchParams = new URLSearchParams(location.search);
+      const forgotPasswordToken = searchParams.get("forgot_password_token");
+      setIsForgotPasswordToken(forgotPasswordToken);
+    }, [location.search]);
+  
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const [passwordConfirmVisible, setPasswordConfirmVisible] = useState(false);
+  
+    const togglePasswordVisibility = useCallback(() => {
+      setPasswordVisible((prevVisible) => !prevVisible);
+    }, []);
+  
+    const togglePasswordConfirmVisibility = useCallback(() => {
+      setPasswordConfirmVisible((prevVisible) => !prevVisible);
+    }, []);
+  
+    const [isPassword, setIsPassword] = useState("");
+    const [isPasswordConfirm, setIsPasswordConfirm] = useState("");
+    const [submitted, setSubmitted] = useState(false);
+    const [validationErrors, setValidationErrors] = useState([]);
+  
+    const [inputs, setInputs] = useState({
+      password: "",
+      confirm_password: "",
+    });
+  
+    const handleChange = useCallback((e) => {
+      const { name, value } = e.target;
+      if (name === "password") {
+        setIsPassword(value);
+      } else if (name === "confirm_password") {
+        setIsPasswordConfirm(value);
+      }
+      setInputs((prevInputs) => ({ ...prevInputs, [name]: value }));
+    }, []);
+  
+    const handleSubmit = useCallback(
+      async (e) => {
+        e.preventDefault();
+        setSubmitted(true);
+        const data = {
+          forgot_password_token: isForgotPasswordToken,
+          password: inputs.password,
+          confirm_password: inputs.confirm_password,
+        };
+        try {
+          const response = await resetPassword(data);
+          if (response.status === true) {
+            setValidationErrors([]);
+            createNotification("success", "topRight", response.message);
+          } else {
+            if (response?.status === false) {
+              setValidationErrors([]);
+              createNotification("error", "topRight", response.message);
+            }
+            setValidationErrors(response.errors);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+        setSubmitted(false);
+      },
+      [isForgotPasswordToken, inputs]
+    );
 
   return (
     <Layout>
